@@ -1,19 +1,16 @@
-import { Alert } from "@/components/common/Alert";
+import { NewBookingForm } from "@/components/booking/NewBookingForm";
 
 export const IntakePage: React.FC = () => (
-  <section className="space-y-4">
-    <header>
+  <section className="space-y-6">
+    <header className="space-y-1">
       <h1 className="text-2xl font-semibold text-white">New Booking Intake</h1>
-      <p className="mt-1 text-sm text-slate-300">
-        Detailed intake form to be implemented during Sprint 4. This page reserves layout space and
-        validates routing.
+      <p className="text-sm text-slate-300">
+        Capture owner and pet details, assign suites, and block overlapping reservations. The form
+        supports both existing clients and first-time visitors.
       </p>
     </header>
 
-    <Alert variant="warning">
-      Intake form UI coming soon. Use the BookingContext actions directly during development or add
-      temporary controls as needed.
-    </Alert>
+    <NewBookingForm />
   </section>
 );
 

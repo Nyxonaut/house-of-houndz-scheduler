@@ -9,6 +9,7 @@ import {
 import type { ReactNode } from "react";
 
 import { api } from "@/api/client";
+import { useToast } from "@/context/ToastContext";
 import type {
   Booking,
   CreateBookingPayload,
@@ -61,15 +62,19 @@ const reducer = (state: BookingState, action: BookingAction): BookingState => {
   }
 };
 
-interface BookingContextValue extends BookingState {
+export interface BookingContextValue extends BookingState {
   refreshAll: (options?: { silenceErrors?: boolean }) => Promise<void>;
+  createOwner: (payload: Partial<Owner>) => Promise<Owner>;
+  createPet: (payload: Partial<Pet> & { owner_id: number }) => Promise<Pet>;
   createBooking: (payload: CreateBookingPayload) => Promise<void>;
   updateBooking: (id: number, payload: UpdateBookingPayload) => Promise<void>;
   deleteBooking: (id: number) => Promise<void>;
   toggleBathed: (id: number, bathed: boolean) => Promise<void>;
+  checkInBooking: (id: number) => Promise<void>;
+  checkOutBooking: (id: number) => Promise<void>;
 }
 
-const BookingContext = createContext<BookingContextValue | undefined>(undefined);
+export const BookingContext = createContext<BookingContextValue | undefined>(undefined);
 
 const POLL_INTERVAL = Number(import.meta.env.VITE_BOOKING_POLL_MS ?? 30_000);
 
@@ -79,6 +84,7 @@ interface BookingProviderProps {
 
 export const BookingProvider = ({ children }: BookingProviderProps) => {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toast = useToast();
 
   const loadAll = useCallback(async (silenceErrors = false) => {
     dispatch({ type: "SET_LOADING", payload: true });
@@ -112,36 +118,154 @@ export const BookingProvider = ({ children }: BookingProviderProps) => {
     [loadAll]
   );
 
+  const createOwner = useCallback(
+    async (payload: Partial<Owner>) => {
+      try {
+        const owner = await api.createOwner(payload);
+        toast.showToast({
+          title: "Owner saved",
+          variant: "success"
+        });
+        await refreshAll({ silenceErrors: true });
+        return owner;
+      } catch (error) {
+        console.error("Failed to create owner", error);
+        toast.showToast({
+          title: "Owner creation failed",
+          variant: "error"
+        });
+        throw error;
+      }
+    },
+    [refreshAll, toast]
+  );
+
+  const createPet = useCallback(
+    async (payload: Partial<Pet> & { owner_id: number }) => {
+      try {
+        const pet = await api.createPet(payload);
+        toast.showToast({
+          title: "Pet saved",
+          variant: "success"
+        });
+        await refreshAll({ silenceErrors: true });
+        return pet;
+      } catch (error) {
+        console.error("Failed to create pet", error);
+        toast.showToast({
+          title: "Pet creation failed",
+          variant: "error"
+        });
+        throw error;
+      }
+    },
+    [refreshAll, toast]
+  );
+
   const createBooking = useCallback(
     async (payload: CreateBookingPayload) => {
-      await api.createBooking(payload);
-      await refreshAll({ silenceErrors: true });
+      try {
+        await api.createBooking(payload);
+        toast.showToast({
+          title: "Booking created",
+          description: "The new booking was saved successfully.",
+          variant: "success"
+        });
+      } catch (error) {
+        console.error("Failed to create booking", error);
+        toast.showToast({
+          title: "Booking failed",
+          description: "Unable to create booking. Check the details and try again.",
+          variant: "error"
+        });
+        throw error;
+      } finally {
+        await refreshAll({ silenceErrors: true });
+      }
     },
-    [refreshAll]
+    [refreshAll, toast]
   );
 
   const updateBooking = useCallback(
     async (id: number, payload: UpdateBookingPayload) => {
-      await api.updateBooking(id, payload);
-      await refreshAll({ silenceErrors: true });
+      try {
+        await api.updateBooking(id, payload);
+        toast.showToast({
+          title: "Booking updated",
+          variant: "success"
+        });
+      } catch (error) {
+        console.error("Failed to update booking", error);
+        toast.showToast({
+          title: "Update failed",
+          description: "Changes could not be saved.",
+          variant: "error"
+        });
+        throw error;
+      } finally {
+        await refreshAll({ silenceErrors: true });
+      }
     },
-    [refreshAll]
+    [refreshAll, toast]
   );
 
   const deleteBooking = useCallback(
     async (id: number) => {
-      await api.deleteBooking(id);
-      await refreshAll({ silenceErrors: true });
+      try {
+        await api.deleteBooking(id);
+        toast.showToast({
+          title: "Booking removed",
+          variant: "info"
+        });
+      } catch (error) {
+        console.error("Failed to delete booking", error);
+        toast.showToast({
+          title: "Removal failed",
+          variant: "error"
+        });
+        throw error;
+      } finally {
+        await refreshAll({ silenceErrors: true });
+      }
     },
-    [refreshAll]
+    [refreshAll, toast]
   );
 
   const toggleBathed = useCallback(
     async (id: number, bathed: boolean) => {
-      await api.updateBooking(id, { bathed });
-      await refreshAll({ silenceErrors: true });
+      try {
+        await api.updateBooking(id, { bathed });
+        toast.showToast({
+          title: bathed ? "Marked as bathed" : "Bath status cleared",
+          variant: "success"
+        });
+      } catch (error) {
+        console.error("Failed to toggle bathed flag", error);
+        toast.showToast({
+          title: "Update failed",
+          description: "Unable to update bathed flag.",
+          variant: "error"
+        });
+        throw error;
+      } finally {
+        await refreshAll({ silenceErrors: true });
+      }
     },
-    [refreshAll]
+    [refreshAll, toast]
+  );
+
+  const checkInBooking = useCallback(
+    async (id: number) => {
+      await updateBooking(id, { status: "checked-in" });
+    },
+    [updateBooking]
+  );
+
+  const checkOutBooking = useCallback(
+    async (id: number) => {
+      await updateBooking(id, { status: "checked-out" });
+    },
+    [updateBooking]
   );
 
   useEffect(() => {
@@ -159,12 +283,27 @@ export const BookingProvider = ({ children }: BookingProviderProps) => {
     () => ({
       ...state,
       refreshAll,
+      createOwner,
+      createPet,
       createBooking,
       updateBooking,
       deleteBooking,
-      toggleBathed
+      toggleBathed,
+      checkInBooking,
+      checkOutBooking
     }),
-    [state, refreshAll, createBooking, updateBooking, deleteBooking, toggleBathed]
+    [
+      state,
+      refreshAll,
+      createOwner,
+      createPet,
+      createBooking,
+      updateBooking,
+      deleteBooking,
+      toggleBathed,
+      checkInBooking,
+      checkOutBooking
+    ]
   );
 
   return <BookingContext.Provider value={value}>{children}</BookingContext.Provider>;

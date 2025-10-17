@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { BookingProvider, useBookingContext } from "../BookingContext";
+import { ToastProvider } from "../../ToastContext";
 
 vi.mock("@/api/client", () => ({
   api: {
@@ -64,7 +65,9 @@ vi.mock("@/api/client", () => ({
     getCurrentBookings: vi.fn().mockResolvedValue([]),
     createBooking: vi.fn(),
     updateBooking: vi.fn(),
-    deleteBooking: vi.fn()
+    deleteBooking: vi.fn(),
+    createOwner: vi.fn(),
+    createPet: vi.fn()
   }
 }));
 
@@ -80,7 +83,11 @@ const Consumer = () => {
 };
 
 const renderWithProvider = (children: ReactNode) =>
-  render(<BookingProvider>{children}</BookingProvider>);
+  render(
+    <ToastProvider>
+      <BookingProvider>{children}</BookingProvider>
+    </ToastProvider>
+  );
 
 describe("BookingContext", () => {
   it("loads data on mount", async () => {

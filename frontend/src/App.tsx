@@ -1,6 +1,7 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 
 import { Alert } from "./components/common/Alert";
+import { ToastViewport } from "./components/common/ToastViewport";
 import { Spinner } from "./components/common/Spinner";
 import { useBookingContext } from "./context/BookingContext";
 import { CalendarPage } from "./pages/CalendarPage";
@@ -17,7 +18,7 @@ export function App() {
           <div>
             <h1 className="text-2xl font-semibold">House of Houndz Scheduler</h1>
             <p className="text-sm text-slate-400">
-              Sprint 3: data layer & routing scaffolding for the kennel dashboard.
+              Sprint 4: booking workflows, live calendar insights, and resident management.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -82,8 +83,10 @@ export function App() {
       </main>
 
       <footer className="border-t border-slate-800 bg-slate-900/60 py-4 text-center text-xs text-slate-500">
-        Next Sprint: implement booking form, live calendar, and resident dashboard components.
+        Upcoming: real-time updates, deployment automation, and Cloudflare Tunnel guidance.
       </footer>
+
+      <ToastViewport />
     </div>
   );
 }

@@ -57,6 +57,17 @@ Define variables in `frontend/.env`:
 - `VITE_API_BASE_URL` (required, e.g. `http://localhost:8000/api`)
 - `VITE_BOOKING_POLL_MS` (optional polling interval for dashboard refresh)
 
+### Seed data before using the UI
+- Use Django admin (`http://localhost:8000/admin/`) or fixtures to create suite records (recommend labels `Suite 1`–`Suite 13`).
+- Add at least one owner and pet so the calendar and resident dashboard have context.
+- Run `python backend/manage.py createsuperuser` if you need admin credentials.
+
+## Frontend Highlights (Sprint 4)
+- **New Booking Intake** – Create bookings with existing or new owners/pets, capture notes, and receive inline conflict warnings before submitting.
+- **Weekly Calendar** – Navigate by week, view suite occupancy at a glance, and spot overlaps with color-coded statuses.
+- **Resident Dashboard** – Manage check-ins/check-outs, toggle bathing status, review special needs icons, and filter suites (checked-in, booked, vacant).
+- **Global Toasts & Skeletons** – Success/error toasts and loading placeholders improve operator feedback during daily use.
+
 ## Dockerized Workflow
 ```bash
 docker compose build
@@ -98,4 +109,4 @@ git branch feature/frontend-calendar
 Tag releases as `v0.1.0`, `v0.2.0`, etc. Enable GitHub Issues and Discussions, then add default labels (`backend`, `frontend`, `docs`, `bug`, `enhancement`).
 
 ## Project Status
-Backend domain models and API endpoints are in place (Sprint 2). Frontend now includes routing, shared data layer, and testing scaffolding (Sprint 3). Upcoming sprints will implement the booking form, calendar UI, and resident dashboard.
+Back-end domain models and API endpoints are in place (Sprint 2). Front-end now ships booking intake, live calendar, and resident dashboard experiences with toast notifications and tests (Sprint 4). Upcoming work will focus on real-time updates, deployment automation, and Cloudflare Tunnel guidance.

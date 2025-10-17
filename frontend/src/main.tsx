@@ -4,14 +4,17 @@ import { BrowserRouter } from "react-router-dom";
 
 import { App } from "./App";
 import { BookingProvider } from "./context/BookingContext";
+import { ToastProvider } from "./context/ToastContext";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <BrowserRouter>
-      <BookingProvider>
-        <App />
-      </BookingProvider>
+      <ToastProvider>
+        <BookingProvider>
+          <App />
+        </BookingProvider>
+      </ToastProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
