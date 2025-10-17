@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+node_modules/
+*.sqlite3
+*.pyc
+.env
+.DS_Store
+staticfiles/
+media/
+build/
+
+# IDE artifacts
+.idea/
+.vscode/
+

@@ -1,0 +1,2 @@
+"""DRF endpoints package placeholder."""
+
