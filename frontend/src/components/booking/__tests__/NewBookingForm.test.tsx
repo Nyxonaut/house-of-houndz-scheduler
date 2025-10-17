@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -7,7 +7,7 @@ import type { BookingContextValue } from "@/context/BookingContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { NewBookingForm } from "../NewBookingForm";
 
-const renderWithContext = (ctx: Partial<BookingContextValue>) => {
+const renderWithContext = async (ctx: Partial<BookingContextValue>) => {
   const baseContext: BookingContextValue = {
     suites: [],
     owners: [],
@@ -30,17 +30,22 @@ const renderWithContext = (ctx: Partial<BookingContextValue>) => {
 
   const value = { ...baseContext, ...ctx };
 
-  return render(
-    <ToastProvider>
-      <BookingContext.Provider value={value}>
-        <NewBookingForm />
-      </BookingContext.Provider>
-    </ToastProvider>
-  );
+  let result: ReturnType<typeof render> | undefined;
+  await act(async () => {
+    result = render(
+      <ToastProvider>
+        <BookingContext.Provider value={value}>
+          <NewBookingForm />
+        </BookingContext.Provider>
+      </ToastProvider>
+    );
+  });
+  return result!;
 };
 
 describe("NewBookingForm", () => {
   it("creates new owner, pet, and booking on submit", async () => {
+    const user = userEvent.setup();
     const createOwner = vi.fn().mockResolvedValue({
       id: 1,
       name: "Alex",
@@ -68,53 +73,63 @@ describe("NewBookingForm", () => {
     });
     const createBooking = vi.fn().mockResolvedValue({});
 
-    renderWithContext({
+    await renderWithContext({
       suites: [{ id: 1, label: "Suite 1", notes: "", created_at: "", updated_at: "" }],
       createOwner,
       createPet,
       createBooking
     });
 
-    await userEvent.type(screen.getByLabelText(/Name/i), "Alex");
-    const phoneInput = screen.getByLabelText(/Phone/i);
-    await userEvent.type(phoneInput, "555-0100");
+    const [ownerNameInput, petNameInput] = screen.getAllByLabelText(/Name/i);
+    await act(async () => {
+      await user.type(ownerNameInput, "Alex");
+      await user.type(screen.getByLabelText(/Phone/i), "555-0100");
 
-    const petNameInput = screen.getAllByLabelText(/Name/i)[1];
-    await userEvent.type(petNameInput, "Milo");
-    await userEvent.type(screen.getByLabelText(/Breed/i), "Beagle");
-    await userEvent.type(screen.getByLabelText(/Weight/i), "12");
+      await user.type(petNameInput, "Milo");
+      await user.type(screen.getByLabelText(/Breed/i), "Beagle");
+      await user.type(screen.getByLabelText(/Weight/i), "12");
 
-    fireEvent.change(screen.getByLabelText(/^Suite$/i), { target: { value: "1" } });
-    fireEvent.change(screen.getByLabelText(/Start date/i), { target: { value: "2024-01-01" } });
-    fireEvent.change(screen.getByLabelText(/End date/i), { target: { value: "2024-01-05" } });
+      fireEvent.change(screen.getByLabelText(/^Suite$/i), { target: { value: "1" } });
+      fireEvent.change(screen.getByLabelText(/Start date/i), {
+        target: { value: "2024-01-01" }
+      });
+      fireEvent.change(screen.getByLabelText(/End date/i), {
+        target: { value: "2024-01-05" }
+      });
 
-    const submitButton = screen.getByRole("button", { name: /Create booking/i });
-    await userEvent.click(submitButton);
-
-    expect(createOwner).toHaveBeenCalledWith({
-      name: "Alex",
-      phone: "555-0100",
-      email: ""
+      await user.click(screen.getByRole("button", { name: /Create booking/i }));
     });
-    expect(createPet).toHaveBeenCalledWith({
-      owner_id: 1,
-      name: "Milo",
-      breed: "Beagle",
-      weight_kg: 12,
-      special_needs: []
-    });
-    expect(createBooking).toHaveBeenCalledWith({
-      pet_id: 1,
-      suite_id: 1,
-      start_date: "2024-01-01",
-      end_date: "2024-01-05",
-      status: "booked",
-      bathed: false,
-      notes: ""
-    });
+
+    await waitFor(() =>
+      expect(createOwner).toHaveBeenCalledWith({
+        name: "Alex",
+        phone: "555-0100",
+        email: ""
+      })
+    );
+    await waitFor(() =>
+      expect(createPet).toHaveBeenCalledWith({
+        owner_id: 1,
+        name: "Milo",
+        breed: "Beagle",
+        weight_kg: 12,
+        special_needs: []
+      })
+    );
+    await waitFor(() =>
+      expect(createBooking).toHaveBeenCalledWith({
+        pet_id: 1,
+        suite_id: 1,
+        start_date: "2024-01-01",
+        end_date: "2024-01-05",
+        status: "booked",
+        bathed: false,
+        notes: ""
+      })
+    );
   });
 
-  it("warns when selected suite has conflicting booking", () => {
+  it("warns when selected suite has conflicting booking", async () => {
     const owners = [
       { id: 1, name: "Alex", phone: "", email: "", created_at: "", updated_at: "" }
     ];
@@ -138,7 +153,7 @@ describe("NewBookingForm", () => {
         suite: suites[0],
         start_date: "2024-01-01",
         end_date: "2024-01-05",
-        status: "booked",
+        status: "booked" as const,
         bathed: false,
         notes: "",
         created_at: "",
@@ -146,7 +161,7 @@ describe("NewBookingForm", () => {
       }
     ];
 
-    renderWithContext({
+    await renderWithContext({
       owners,
       pets,
       suites,
@@ -154,16 +169,25 @@ describe("NewBookingForm", () => {
     });
 
     // switch to existing modes
-    await userEvent.click(screen.getByRole("button", { name: /Existing/i }));
-    const petExistingButton = screen.getAllByRole("button", { name: /Existing/i })[1];
-    await userEvent.click(petExistingButton);
+    const [ownerExistingButton, petExistingButton] = screen.getAllByRole("button", {
+      name: /Existing/i
+    });
+    const user = userEvent.setup();
+    await act(async () => {
+      await user.click(ownerExistingButton);
+      await user.click(petExistingButton);
 
-    fireEvent.change(screen.getByLabelText(/^Suite$/i), { target: { value: "1" } });
-    fireEvent.change(screen.getByLabelText(/Start date/i), { target: { value: "2024-01-02" } });
-    fireEvent.change(screen.getByLabelText(/End date/i), { target: { value: "2024-01-03" } });
+      fireEvent.change(screen.getByLabelText(/^Suite$/i), { target: { value: "1" } });
+      fireEvent.change(screen.getByLabelText(/Start date/i), {
+        target: { value: "2024-01-02" }
+      });
+      fireEvent.change(screen.getByLabelText(/End date/i), {
+        target: { value: "2024-01-03" }
+      });
+    });
 
     expect(
-      screen.getByText(/Selected suite is already booked for those dates/i)
+      screen.getByText(/suite already has a booking within these dates/i)
     ).toBeInTheDocument();
   });
 });

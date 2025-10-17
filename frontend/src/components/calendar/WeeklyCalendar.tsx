@@ -127,6 +127,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ suites, bookings
                     >
                       {active ? (
                         <div
+                          data-testid="calendar-booking"
+                          data-suite={suite.label}
+                          data-date={date.toISOString()}
                           className={clsx(
                             "rounded-md px-2 py-2 text-xs font-semibold text-white shadow",
                             statusColors[active.status]
@@ -144,7 +147,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ suites, bookings
                           ) : null}
                         </div>
                       ) : (
-                        <span className="text-[10px] text-slate-500">Vacant</span>
+                        <span
+                          className="text-[10px] text-slate-500"
+                          data-testid="calendar-vacant"
+                          data-suite={suite.label}
+                          data-date={date.toISOString()}
+                        >
+                          Vacant
+                        </span>
                       )}
                     </td>
                   );

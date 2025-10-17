@@ -52,7 +52,15 @@ export const DashboardPage: React.FC = () => {
             ["booked", "checked-in"].includes(booking.status) &&
             todayWithin(booking)
         )
-        .sort((left, right) => (left.status === "checked-in" ? -1 : 1));
+        .sort((left, right) => {
+          if (left.status === "checked-in" && right.status !== "checked-in") {
+            return -1;
+          }
+          if (right.status === "checked-in" && left.status !== "checked-in") {
+            return 1;
+          }
+          return 0;
+        });
       const booking = active[0];
       return {
         suite,

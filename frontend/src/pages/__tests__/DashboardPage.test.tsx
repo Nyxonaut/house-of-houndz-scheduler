@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -71,7 +71,7 @@ describe("DashboardPage", () => {
           suite: suites[0],
           start_date: "2020-01-01",
           end_date: "2030-01-05",
-          status: "booked",
+          status: "booked" as const,
           bathed: false,
           notes: "",
           created_at: "",
@@ -81,8 +81,11 @@ describe("DashboardPage", () => {
       checkInBooking
     });
 
+    const user = userEvent.setup();
     const button = await screen.findByRole("button", { name: /Check In/i });
-    await userEvent.click(button);
+    await act(async () => {
+      await user.click(button);
+    });
     expect(checkInBooking).toHaveBeenCalledWith(1);
   });
 
@@ -95,7 +98,7 @@ describe("DashboardPage", () => {
           suite: suites[0],
           start_date: "2020-01-01",
           end_date: "2030-01-05",
-          status: "checked-in",
+          status: "checked-in" as const,
           bathed: false,
           notes: "",
           created_at: "",
@@ -104,7 +107,10 @@ describe("DashboardPage", () => {
       ]
     });
 
-    await userEvent.click(screen.getByRole("button", { name: /Vacant/i }));
+    const user = userEvent.setup();
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /Vacant/i }));
+    });
     expect(screen.getByText(/No suites match the selected filter/i)).toBeInTheDocument();
   });
 });

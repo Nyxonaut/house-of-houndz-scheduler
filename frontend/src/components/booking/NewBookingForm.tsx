@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 
 import { useBookingContext } from "@/context/BookingContext";
-import type { Booking, Owner, Pet, Suite } from "@/types";
+import type { Booking, Suite } from "@/types";
 import { formatDisplayDate } from "@/utils/date";
 import { Alert } from "@/components/common/Alert";
 import { Spinner } from "@/components/common/Spinner";
