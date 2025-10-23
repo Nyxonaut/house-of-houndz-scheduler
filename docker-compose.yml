@@ -14,11 +14,13 @@ services:
 
   backend:
     build: ./backend
-    command: gunicorn houndz.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn -c houndz/gunicorn.conf.py houndz.wsgi:application
     env_file:
       - ./backend/.env.example
     volumes:
       - ./backend:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     depends_on:
       - db
     ports:
@@ -36,9 +38,13 @@ services:
     depends_on:
       - frontend
       - backend
+    volumes:
+      - static_volume:/usr/share/nginx/html/static
+      - media_volume:/usr/share/nginx/html/media
     ports:
       - "80:80"
 
 volumes:
   db_data:
-
+  static_volume:
+  media_volume:
