@@ -42,6 +42,18 @@ The House of Houndz Scheduler is a full-stack system designed to manage kennel b
    ```bash
    python backend/manage.py test
    ```
+   To collect static assets for production deployments:
+   ```bash
+   python backend/manage.py collectstatic --noinput
+   ```
+
+6. Run backend in production mode via Gunicorn (example):
+   ```bash
+   DJANGO_SETTINGS_MODULE=houndz.settings.prod \
+   DJANGO_ALLOWED_HOSTS=house-of-houndz.local \
+   DJANGO_SECRET_KEY="change-me" \
+   python -m gunicorn -c houndz/gunicorn.conf.py houndz.wsgi:application
+   ```
 
 ### Demo data
 Populate the database with a starter set of 13 suites, a demo owner/pet, and a sample checked-in booking:
@@ -68,6 +80,41 @@ Define variables in `frontend/.env`:
 - Add at least one owner and pet so the calendar and resident dashboard have context.
 - Run `python backend/manage.py createsuperuser` if you need admin credentials.
 - On the “Add pet” admin form, start typing an owner's name into the autocomplete field to reveal matches. The inline “+” button can also create a new owner without leaving the form.
+- Before deploying, run `python backend/manage.py collectstatic --noinput` so updated CSS/JS is available to Whitenoise or Nginx.
+
+### Context workflow
+- The living project overview resides in `context/PROJECT_CONTEXT.md` (mission, architecture, open decisions).
+- Each work session should open a new file under `docs/sessions/` using `SESSION_TEMPLATE.md` to capture scope, decisions, and next steps.
+- Reference the latest session log in pull requests so reviewers can follow the narrative.
+- Follow the QA checklist in the PR template to confirm session notes and tests are up to date before merging.
+
+## Settings Layout
+- `backend/houndz/settings/base.py`: shared defaults (apps, middleware, database env helper, logging format, static/media paths).
+- `backend/houndz/settings/dev.py`: development overrides (loads `backend/.env`, enables DEBUG, SQLite fallback).
+- `backend/houndz/settings/prod.py`: hardened configuration (DEBUG off, required secret/host checks, HSTS/secure cookies).
+
+Override the settings module by exporting `DJANGO_SETTINGS_MODULE` or passing it to `manage.py`/Gunicorn (`houndz.settings.dev` by default).
+
+## Production Environment Variables
+- `DJANGO_SECRET_KEY` (required in prod)
+- `DJANGO_ALLOWED_HOSTS` (comma-separated hostnames)
+- `DJANGO_CSRF_TRUSTED_ORIGINS` (optional, comma-separated URLs)
+- `DATABASE_URL` (PostgreSQL connection string)
+- `DJANGO_STATIC_ROOT` / `DJANGO_MEDIA_ROOT` (paths for collected assets and uploads)
+- `DJANGO_LOG_LEVEL` (optional, INFO by default)
+- Optional Gunicorn variables: `GUNICORN_BIND`, `GUNICORN_WORKERS`, `GUNICORN_TIMEOUT`, etc.
+
+## Deployment Checklist
+1. Ensure PostgreSQL is running and database/role exist.
+2. Set environment variables listed above (e.g., in systemd unit or `.env.prod`).
+3. Activate virtualenv, install requirements, run migrations.
+4. Execute `python backend/manage.py collectstatic --noinput` (point `DJANGO_STATIC_ROOT` to shared volume).
+5. Launch Gunicorn using `gunicorn -c houndz/gunicorn.conf.py houndz.wsgi:application` (with prod settings module).
+6. Confirm static/media volumes are mounted (Docker: `static_volume`, `media_volume`; Pi: `/var/www/houndz/static`, `/var/www/houndz/media`).
+7. Place Nginx (or Cloudflare Tunnel) in front for HTTPS/host routing; ensure HSTS/secure cookies offload correctly.
+8. Verify health via `/api/health/`, admin access, frontend status.
+
+For full details see [docs/deployment.md](docs/deployment.md).
 
 ## Frontend Highlights (Sprint 4)
 - **New Booking Intake** – Create bookings with existing or new owners/pets, capture notes, and receive inline conflict warnings before submitting.
