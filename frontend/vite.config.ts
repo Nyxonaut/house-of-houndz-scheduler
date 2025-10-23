@@ -3,6 +3,8 @@ import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+const DIST_ROOT = "../backend/staticfiles/frontend";
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -10,15 +12,20 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url))
     }
   },
-  server: {
-    port: 3000,
-    host: true
+  base: "/static/frontend/",
+  build: {
+    outDir: DIST_ROOT,
+    emptyOutDir: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
   },
-  test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: "./src/setupTests.ts",
-    css: true
+  server: {
+    port: 5173,
+    open: true
   }
 });
 
