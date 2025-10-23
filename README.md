@@ -43,6 +43,12 @@ The House of Houndz Scheduler is a full-stack system designed to manage kennel b
    python backend/manage.py test
    ```
 
+### Demo data
+Populate the database with a starter set of 13 suites, a demo owner/pet, and a sample checked-in booking:
+```bash
+python backend/manage.py seed_demo_data
+```
+
 ### Backend environment variables
 The Django service reads configuration from `backend/.env`. Key values include:
 - `DJANGO_SECRET_KEY`
@@ -61,6 +67,7 @@ Define variables in `frontend/.env`:
 - Use Django admin (`http://localhost:8000/admin/`) or fixtures to create suite records (recommend labels `Suite 1`–`Suite 13`).
 - Add at least one owner and pet so the calendar and resident dashboard have context.
 - Run `python backend/manage.py createsuperuser` if you need admin credentials.
+- On the “Add pet” admin form, start typing an owner's name into the autocomplete field to reveal matches. The inline “+” button can also create a new owner without leaving the form.
 
 ## Frontend Highlights (Sprint 4)
 - **New Booking Intake** – Create bookings with existing or new owners/pets, capture notes, and receive inline conflict warnings before submitting.
