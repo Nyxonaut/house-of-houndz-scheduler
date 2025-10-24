@@ -1,36 +1,97 @@
+# backend/houndz/settings/dev.py
+
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
-from dotenv import load_dotenv
+# Optional: handle missing dotenv gracefully
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
 
-from .base import *  # noqa: F401,F403
+# Import base settings and helpers
+from .base import *
 from .base import PROJECT_DIR, dj_database_url, env_list
 
-# Load environment variables from backend/.env for local development.
-load_dotenv(PROJECT_DIR / ".env")
+# ---------------------------------------------------------------------
+# Environment setup
+# ---------------------------------------------------------------------
 
-DEBUG = True
+# Define project root and .env file path
+ROOT_DIR = Path(__file__).resolve().parents[3]
+ENV_PATH = ROOT_DIR / ".env"
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key")
+# --- Guarded .env loader ---
+if os.getenv("DISABLE_DOTENV") == "1":
+    print("⚠️  Dotenv loading disabled via DISABLE_DOTENV=1")
+else:
+    if load_dotenv is None:
+        print("⚠️  python-dotenv not installed; skipping .env load")
+    elif not ENV_PATH.is_file():
+        print(f"⚠️  .env not found at {ENV_PATH}, skipping load")
+    else:
+        try:
+            load_dotenv(ENV_PATH, override=False)
+            print(f"✅ Loaded environment from {ENV_PATH}")
+        except Exception as e:
+            print(f"⚠️  Error loading {ENV_PATH}: {e}")
 
+# ---------------------------------------------------------------------
+# Django core settings overrides for development
+# ---------------------------------------------------------------------
+
+DEBUG = os.getenv("DEBUG", "True").lower() in ("1", "true", "yes")
+
+# Default allowed hosts for local dev
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
-if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
-CSRF_TRUSTED_ORIGINS = env_list(
-    "DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000"
-)
-
+# Database configuration
 DATABASES = {
-    "default": dj_database_url.config(
-        default=os.environ.get(
-            "DATABASE_URL",
-            f"sqlite:///{PROJECT_DIR / 'db.sqlite3'}",
-        ),
-        conn_max_age=0,
-    )
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB", "houndz"),
+        "USER": os.getenv("POSTGRES_USER", "postgres"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "password"),
+        "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+    }
 }
 
-# Developer-friendly logging
-LOG_LEVEL = os.environ.get("DJANGO_LOG_LEVEL", "DEBUG")
+# --- TEMPORARY for debugging only ---
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+]
+# --- end TEMPORARY ---
+
+# ---------------------------------------------------------------------
+# Other environment-specific settings
+# ---------------------------------------------------------------------
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = env_list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "http://localhost,http://127.0.0.1",
+)
+
+# Logging (optional but good for visibility)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "DEBUG" if DEBUG else "INFO",
+    },
+}

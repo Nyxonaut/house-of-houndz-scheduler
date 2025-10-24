@@ -8,7 +8,11 @@ from django.urls import include, path
 
 
 def healthcheck_view(_: object) -> HttpResponse:
-    return HttpResponse("ok", content_type="text/plain")
+    return HttpResponse("ok", content_type="text/plain")from django.conf import settings
+from django.conf.urls.static import static
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -16,8 +20,3 @@ urlpatterns = [
     path("api/", include("api.urls")),
 ]
 
-from django.conf import settings
-from django.conf.urls.static import static
-
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
