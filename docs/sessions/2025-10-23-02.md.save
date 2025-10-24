@@ -1,0 +1,28 @@
+# Session Log – {{DATE}}
+
+## Participants
+- Devin Hill
+
+## Scope / Tasks
+- First Full Local QA Pass
+|-Set up Backend in Terminal 1
+||-Ensure PostgreSQL is up
+||-Apply migrations (if needed)
+||-Run backend tests
+||-Start the server
+|-Set up Frontend in Terminal 2
+||-Install dependencies if needed
+||-Run frontend tests/build for the QA checklist
+||-Start the dev server to exercise UI
+|-Manual Smoke Checks
+|-Wrap Up
+-----------------End of Session Wrap Up----------------
+Worked through backend devserver instability and static-serving problems, validated the Django admin UI, created test data, and identified a UX bug where the Pet.special_needs admin field requires JSON and rejects free-form text. Static assets were fixed (WhiteNoise + collectstatic). Frontend npm install was started but pause
+## Key Decisions
+- {{Architecture or product choices made}}
+
+## Issues / Risks
+- {{Blockers, staffing, technical debt}}
+
+## Next Steps
+- {{Follow-up actions, handoff notes}}
